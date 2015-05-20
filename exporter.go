@@ -1,9 +1,7 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"net"
 	"net/http"
 	"sync"
 
@@ -127,35 +125,4 @@ func (e *Exporter) performAllChecks() (OverallHealthCheckResult, error) {
 		result[service.Name] = *status
 	}
 	return result, nil
-}
-
-func main() {
-	flag.Parse()
-
-	config, err := getConfig(*configFile)
-	if err != nil {
-		glog.Fatal(err)
-	}
-	glog.Infof("using config from %s: %v", *configFile, config)
-
-	exporter := NewExporter(config)
-	prometheus.MustRegister(exporter)
-
-	http.Handle(*metricsEndpoint, prometheus.Handler())
-	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "OK")
-	})
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, *metricsEndpoint, http.StatusMovedPermanently)
-	})
-
-	glog.Infof("Starting exporter at %s", *listenAddress)
-	listener, err := net.Listen("tcp4", *listenAddress)
-	if err != nil {
-		glog.Fatal(err)
-	}
-	err = http.Serve(listener, nil)
-	if err != nil {
-		glog.Fatal(err)
-	}
 }

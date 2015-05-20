@@ -18,10 +18,6 @@ var (
 	metricsEndpoint = flag.String("telemetry.endpoint", "/metrics", "Path under which to expose metrics.")
 )
 
-const (
-	namespace = "health"
-)
-
 func getConfig(file string) (*Config, error) {
 	config := &Config{}
 	glog.Infof("reading config from %s", file)

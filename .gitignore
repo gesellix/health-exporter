@@ -23,7 +23,7 @@ _testmain.go
 *.exe
 *.test
 *.prof
-simple-exporter
+health-exporter
 
 .idea
 *.iml
