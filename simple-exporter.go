@@ -25,6 +25,8 @@ const (
 
 type HealthCheckResponse struct {
 	Status string        `json:"status"`
+	IsOk   bool
+	Labels prometheus.Labels
 }
 
 type OverallHealthCheckResult map[string]HealthCheckResponse
@@ -57,7 +59,7 @@ func NewExporter(servicesConfig *Config) *Exporter {
 				Name:      "service",
 				Help:      "service status by service",
 			},
-			[]string{"service_name"}),
+			servicesConfig.collectLabels()),
 	}
 }
 
@@ -84,38 +86,44 @@ func (e *Exporter) Collect(ch chan <- prometheus.Metric) {
 	}
 
 	overall := 1.0
-	glog.Infof("result: %v", result)
 	for k, v := range result {
-		glog.Infof("result: %s->%v", k, v)
+		glog.Infof("%s -> %v", k, v)
 		serviceUp := 0.0
-		if v.Status == "UP" {
+		if v.IsOk {
 			serviceUp = 1.0
 		} else {
 			overall = 0.0
 		}
-		e.statusByService.WithLabelValues(k).Set(serviceUp)
+		e.statusByService.With(v.Labels).Set(serviceUp)
 	}
 	e.up.Set(overall)
 	return
 }
 
-func (e *Exporter) performCheck(client *http.Client, service Service) (*HealthCheckResponse, error) {
-	resp, err := client.Get(service.Uri)
+func (e *Exporter) performCheck(service Service) (*HealthCheckResponse, error) {
+	resp, err := e.client.Get(service.Uri)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading from URI %s: %v", service.Uri, err)
-	}
-
-	data, err := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		if err != nil {
-			data = []byte(err.Error())
+		glog.Errorf("Error reading from URI %s: %v", service.Uri, err)
+		status := &HealthCheckResponse{Status:"ERROR", IsOk:false}
+		labels := prometheus.Labels{"service_name": service.Name}
+		for label, value := range service.Labels {
+			labels[label] = value
 		}
-		return nil, fmt.Errorf("Status %s (%d): %s", resp.Status, resp.StatusCode, data)
+		status.Labels = labels
+		return status, err
 	}
 
-	status := &HealthCheckResponse{}
-	err = json.Unmarshal(data, &status)
+	status := &HealthCheckResponse{Status:"DOWN", IsOk:false}
+	labels := prometheus.Labels{"service_name": service.Name}
+	for label, value := range service.Labels {
+		labels[label] = value
+	}
+	glog.Infof(fmt.Sprintf("labels: %v\n", labels))
+	if resp.StatusCode >= 200 && resp.StatusCode < 400 {
+		status.Status = "UP"
+		status.IsOk = true
+		status.Labels = labels
+	}
 	glog.Infof(fmt.Sprintf("status for %s: %v\n", service.Name, status))
 	return status, nil
 }
@@ -123,11 +131,7 @@ func (e *Exporter) performCheck(client *http.Client, service Service) (*HealthCh
 func (e *Exporter) performAllChecks() (OverallHealthCheckResult, error) {
 	result := make(OverallHealthCheckResult)
 	for _, service := range e.config.Services {
-		status, err := e.performCheck(e.client, service)
-		if err != nil {
-			glog.Fatal(err)
-			return nil, fmt.Errorf("Error reading from URI %s: %v", service.Uri, err)
-		}
+		status, _ := e.performCheck(service)
 		result[service.Name] = *status
 	}
 	return result, nil
