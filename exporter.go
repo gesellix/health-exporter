@@ -1,22 +1,14 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"sync"
 
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
-)
-
-var (
-	configFile = flag.String("config.file", "", "Path to config file.")
-	listenAddress = flag.String("telemetry.address", ":9990", "Address on which to expose metrics.")
-	metricsEndpoint = flag.String("telemetry.endpoint", "/metrics", "Path under which to expose metrics.")
 )
 
 const (
@@ -135,16 +127,6 @@ func (e *Exporter) performAllChecks() (OverallHealthCheckResult, error) {
 		result[service.Name] = *status
 	}
 	return result, nil
-}
-
-func getConfig(file string) (*Config, error) {
-	config := &Config{}
-	glog.Infof("reading config from %s", file)
-	bytes, err := ioutil.ReadFile(file)
-	if err != nil {
-		return nil, err
-	}
-	return config, json.Unmarshal(bytes, &config)
 }
 
 func main() {
