@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"sync"
 
@@ -163,7 +164,11 @@ func main() {
 	})
 
 	glog.Infof("Starting exporter at %s", *listenAddress)
-	err = http.ListenAndServe(*listenAddress, nil)
+	listener, err := net.Listen("tcp4", *listenAddress)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	err = http.Serve(listener, nil)
 	if err != nil {
 		glog.Fatal(err)
 	}
