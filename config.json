@@ -1,0 +1,8 @@
+{
+  "services": [
+    {
+      "name": "test",
+      "uri": "http://localhost:8080/health"
+    }
+  ]
+}
