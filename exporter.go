@@ -95,7 +95,7 @@ func (e *Exporter) performCheck(service Service) (*HealthCheckResponse, error) {
 	if err != nil {
 		glog.Errorf("Error reading from URI %s: %v", service.Uri, err)
 		status := &HealthCheckResponse{Status:"ERROR", IsOk:false}
-		labels := prometheus.Labels{"service_name": service.Name}
+		labels := prometheus.Labels{"name": service.Name}
 		for label, value := range service.Labels {
 			labels[label] = value
 		}
@@ -104,7 +104,7 @@ func (e *Exporter) performCheck(service Service) (*HealthCheckResponse, error) {
 	}
 
 	status := &HealthCheckResponse{Status:"DOWN", IsOk:false}
-	labels := prometheus.Labels{"service_name": service.Name}
+	labels := prometheus.Labels{"name": service.Name}
 	for label, value := range service.Labels {
 		labels[label] = value
 	}
