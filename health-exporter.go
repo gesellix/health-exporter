@@ -1,10 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 
@@ -13,25 +11,15 @@ import (
 )
 
 var (
-	configFile = flag.String("config.file", "", "Path to config file.")
+	configFile = flag.String("config.file", "config.json", "Path to config file.")
 	listenAddress = flag.String("telemetry.address", ":9990", "Address on which to expose metrics.")
 	metricsEndpoint = flag.String("telemetry.endpoint", "/metrics", "Path under which to expose metrics.")
 )
 
-func getConfig(file string) (*Config, error) {
-	config := &Config{}
-	glog.Infof("reading config from %s", file)
-	bytes, err := ioutil.ReadFile(file)
-	if err != nil {
-		return nil, err
-	}
-	return config, json.Unmarshal(bytes, &config)
-}
-
 func main() {
 	flag.Parse()
 
-	config, err := getConfig(*configFile)
+	config, err := readConfig(*configFile)
 	if err != nil {
 		glog.Fatal(err)
 	}
@@ -39,8 +27,8 @@ func main() {
 
 	exporter := NewExporter(config)
 	prometheus.MustRegister(exporter)
-
 	http.Handle(*metricsEndpoint, prometheus.Handler())
+
 	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "OK")
 	})
@@ -48,7 +36,7 @@ func main() {
 		http.Redirect(w, r, *metricsEndpoint, http.StatusMovedPermanently)
 	})
 
-	glog.Infof("Starting exporter at %s", *listenAddress)
+	glog.Infof("starting exporter at tcp4://%s", *listenAddress)
 	listener, err := net.Listen("tcp4", *listenAddress)
 	if err != nil {
 		glog.Fatal(err)

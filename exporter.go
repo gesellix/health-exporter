@@ -13,21 +13,21 @@ const (
 	namespace = "health"
 )
 
-type HealthCheckResponse struct {
-	Status string        `json:"status"`
+type HealthCheckResult struct {
+	Status string
 	IsOk   bool
 	Labels prometheus.Labels
 }
 
-type OverallHealthCheckResult map[string]HealthCheckResponse
+type OverallHealthCheckResult map[string]HealthCheckResult
 
 type Exporter struct {
-	config          *Config
-	client          *http.Client
-	mutex           sync.RWMutex
+	config        *Config
+	client        *http.Client
+	mutex         sync.RWMutex
 
-	up              prometheus.Gauge
-	statusByService *prometheus.GaugeVec
+	up            prometheus.Gauge
+	serviceStatus *prometheus.GaugeVec
 }
 
 func NewExporter(servicesConfig *Config) *Exporter {
@@ -43,86 +43,71 @@ func NewExporter(servicesConfig *Config) *Exporter {
 				Name:      "overall",
 				Help:      "overall service availability",
 			}),
-		statusByService: prometheus.NewGaugeVec(
+		serviceStatus: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace: namespace,
 				Name:      "service",
-				Help:      "service status by service",
+				Help:      "service status summary",
 			},
-			servicesConfig.collectLabels()),
+			servicesConfig.collectUniqueLabelNames()),
 	}
 }
 
 func (e *Exporter) Describe(ch chan <- *prometheus.Desc) {
 	ch <- e.up.Desc()
-	e.statusByService.Describe(ch)
+	e.serviceStatus.Describe(ch)
 }
 
 func (e *Exporter) Collect(ch chan <- prometheus.Metric) {
 	e.mutex.Lock() // To protect metrics from concurrent collects.
 	defer e.mutex.Unlock()
 
-	sendStatus := func() {
+	sendResult := func() {
 		ch <- e.up
-		e.statusByService.Collect(ch)
+		e.serviceStatus.Collect(ch)
 	}
-	defer sendStatus()
+	defer sendResult()
 
-	e.up.Set(0)
-
-	result, err := e.performAllChecks()
-	if err != nil {
-		glog.Error(fmt.Sprintf("Error collecting stats: %s", err))
-	}
+	result := e.performAllChecks()
 
 	overall := 1.0
 	for k, v := range result {
-		glog.Infof("%s -> %v", k, v)
+		glog.Infof("service status %s at %s", v.Status, k)
 		serviceUp := 0.0
 		if v.IsOk {
 			serviceUp = 1.0
 		} else {
 			overall = 0.0
 		}
-		e.statusByService.With(v.Labels).Set(serviceUp)
+		e.serviceStatus.With(v.Labels).Set(serviceUp)
 	}
 	e.up.Set(overall)
 	return
 }
 
-func (e *Exporter) performCheck(service Service) (*HealthCheckResponse, error) {
-	resp, err := e.client.Get(service.Uri)
-	if err != nil {
-		glog.Errorf("Error reading from URI %s: %v", service.Uri, err)
-		status := &HealthCheckResponse{Status:"ERROR", IsOk:false}
-		labels := prometheus.Labels{"name": service.Name}
-		for label, value := range service.Labels {
-			labels[label] = value
-		}
-		status.Labels = labels
-		return status, err
-	}
-
-	status := &HealthCheckResponse{Status:"DOWN", IsOk:false}
-	labels := prometheus.Labels{"name": service.Name}
+func (e *Exporter) performCheck(service Service) (*HealthCheckResult, error) {
+	labels := prometheus.Labels{}
 	for label, value := range service.Labels {
 		labels[label] = value
 	}
-	glog.Infof(fmt.Sprintf("labels: %v\n", labels))
-	if resp.StatusCode >= 200 && resp.StatusCode < 400 {
-		status.Status = "UP"
-		status.IsOk = true
-		status.Labels = labels
+
+	resp, err := e.client.Get(service.Uri)
+	if err != nil {
+		glog.Errorf("Error reading from URI %s: %v", service.Uri, err)
+		status := &HealthCheckResult{Status:"ERROR", IsOk:false, Labels:labels}
+		return status, err
 	}
-	glog.Infof(fmt.Sprintf("status for %s: %v\n", service.Name, status))
+
+	isStatusOk := resp.StatusCode >= 200 && resp.StatusCode < 400
+	status := &HealthCheckResult{Status:fmt.Sprintf("%d", resp.StatusCode), IsOk:isStatusOk, Labels:labels}
 	return status, nil
 }
 
-func (e *Exporter) performAllChecks() (OverallHealthCheckResult, error) {
+func (e *Exporter) performAllChecks() (OverallHealthCheckResult) {
 	result := make(OverallHealthCheckResult)
 	for _, service := range e.config.Services {
 		status, _ := e.performCheck(service)
-		result[service.Name] = *status
+		result[service.Uri] = *status
 	}
-	return result, nil
+	return result
 }

@@ -1,7 +1,11 @@
 package main
 
+import (
+	"io/ioutil"
+	"encoding/json"
+)
+
 type Service struct {
-	Name   string `json:"name"`
 	Uri    string `json:"uri"`
 	Labels map[string]string `json:"labels"`
 }
@@ -10,14 +14,22 @@ type Config struct {
 	Services []Service        `json:"services"`
 }
 
-func (c *Config) collectLabels() ([]string) {
+func readConfig(file string) (*Config, error) {
+	config := &Config{}
+	bytes, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+	return config, json.Unmarshal(bytes, &config)
+}
+
+func (c *Config) collectUniqueLabelNames() ([]string) {
 	uniqueLabels := make(map[string]interface{})
 	for _, service := range c.Services {
 		for label, _ := range service.Labels {
 			uniqueLabels[label] = nil
 		}
 	}
-	uniqueLabels["name"] = nil
 	labels := make([]string, len(uniqueLabels))
 
 	i := 0

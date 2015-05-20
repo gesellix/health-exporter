@@ -1,8 +1,12 @@
 {
   "services": [
     {
-      "name": "test",
-      "uri": "http://localhost:8080/health"
+      "uri": "http://localhost:8080/health",
+      "labels": {
+        "name": "test",
+        "stage": "dev",
+        "foo": "bar"
+      }
     }
   ]
 }
