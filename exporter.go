@@ -90,6 +90,7 @@ func (e *Exporter) performCheck(service Service) (*HealthCheckResult, error) {
 	for label, value := range service.Labels {
 		labels[label] = value
 	}
+	labels["uri"] = service.Uri
 
 	resp, err := e.client.Get(service.Uri)
 	if err != nil {

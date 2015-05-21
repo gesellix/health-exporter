@@ -25,6 +25,7 @@ func readConfig(file string) (*Config, error) {
 
 func (c *Config) collectUniqueLabelNames() ([]string) {
 	uniqueLabels := make(map[string]interface{})
+	uniqueLabels["uri"] = nil
 	for _, service := range c.Services {
 		for label, _ := range service.Labels {
 			uniqueLabels[label] = nil
