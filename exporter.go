@@ -97,6 +97,7 @@ func (e *Exporter) performCheck(service Service) (*HealthCheckResult, error) {
 		status := &HealthCheckResult{Status:"ERROR", IsOk:false, Labels:labels}
 		return status, err
 	}
+	defer resp.Body.Close()
 
 	isStatusOk := resp.StatusCode >= 200 && resp.StatusCode < 400
 	status := &HealthCheckResult{Status:fmt.Sprintf("%d", resp.StatusCode), IsOk:isStatusOk, Labels:labels}
