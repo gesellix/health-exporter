@@ -22,9 +22,9 @@ type HealthCheckResult struct {
 type OverallHealthCheckResult map[string]HealthCheckResult
 
 type Exporter struct {
-	config        *Config
-	client        *http.Client
-	mutex         sync.RWMutex
+	config *Config
+	client *http.Client
+	mutex  sync.RWMutex
 
 	up            prometheus.Gauge
 	serviceStatus *prometheus.GaugeVec
@@ -35,7 +35,7 @@ func NewExporter(servicesConfig *Config) *Exporter {
 
 	return &Exporter{
 		client: httpClient,
-		config : servicesConfig,
+		config: servicesConfig,
 
 		up: prometheus.NewGauge(
 			prometheus.GaugeOpts{
@@ -53,12 +53,12 @@ func NewExporter(servicesConfig *Config) *Exporter {
 	}
 }
 
-func (e *Exporter) Describe(ch chan <- *prometheus.Desc) {
+func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.up.Desc()
 	e.serviceStatus.Describe(ch)
 }
 
-func (e *Exporter) Collect(ch chan <- prometheus.Metric) {
+func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	e.mutex.Lock() // To protect metrics from concurrent collects.
 	defer e.mutex.Unlock()
 
@@ -86,7 +86,7 @@ func (e *Exporter) Collect(ch chan <- prometheus.Metric) {
 }
 
 func (e *Exporter) performCheck(service Service) (*HealthCheckResult, error) {
-	defaultLabels := func(labelNames []string) (prometheus.Labels) {
+	defaultLabels := func(labelNames []string) prometheus.Labels {
 		labels := prometheus.Labels{}
 		for _, labelName := range labelNames {
 			labels[labelName] = ""
@@ -103,17 +103,17 @@ func (e *Exporter) performCheck(service Service) (*HealthCheckResult, error) {
 	resp, err := e.client.Get(service.Uri)
 	if err != nil {
 		glog.Errorf("Error reading from URI %s: %v", service.Uri, err)
-		status := &HealthCheckResult{Status:"ERROR", IsOk:false, Labels:labels}
+		status := &HealthCheckResult{Status: "ERROR", IsOk: false, Labels: labels}
 		return status, err
 	}
 	defer resp.Body.Close()
 
 	isStatusOk := resp.StatusCode >= 200 && resp.StatusCode < 400
-	status := &HealthCheckResult{Status:fmt.Sprintf("%d", resp.StatusCode), IsOk:isStatusOk, Labels:labels}
+	status := &HealthCheckResult{Status: fmt.Sprintf("%d", resp.StatusCode), IsOk: isStatusOk, Labels: labels}
 	return status, nil
 }
 
-func (e *Exporter) performAllChecks() (OverallHealthCheckResult) {
+func (e *Exporter) performAllChecks() OverallHealthCheckResult {
 	result := make(OverallHealthCheckResult)
 	for _, service := range e.config.Services {
 		status, _ := e.performCheck(service)

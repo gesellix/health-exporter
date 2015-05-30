@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	configFile = flag.String("config.file", "config.json", "Path to config file.")
-	listenAddress = flag.String("telemetry.address", ":9990", "Address on which to expose metrics.")
+	configFile      = flag.String("config.file", "config.json", "Path to config file.")
+	listenAddress   = flag.String("telemetry.address", ":9990", "Address on which to expose metrics.")
 	metricsEndpoint = flag.String("telemetry.endpoint", "/metrics", "Path under which to expose metrics.")
 )
 

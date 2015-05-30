@@ -1,17 +1,17 @@
 package main
 
 import (
-	"io/ioutil"
 	"encoding/json"
+	"io/ioutil"
 )
 
 type Service struct {
-	Uri    string `json:"uri"`
+	Uri    string            `json:"uri"`
 	Labels map[string]string `json:"labels"`
 }
 
 type Config struct {
-	Services []Service        `json:"services"`
+	Services []Service `json:"services"`
 }
 
 func readConfig(file string) (*Config, error) {
@@ -23,7 +23,7 @@ func readConfig(file string) (*Config, error) {
 	return config, json.Unmarshal(bytes, &config)
 }
 
-func (c *Config) collectUniqueLabelNames() ([]string) {
+func (c *Config) collectUniqueLabelNames() []string {
 	uniqueLabels := make(map[string]interface{})
 	uniqueLabels["uri"] = nil
 	for _, service := range c.Services {
