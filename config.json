@@ -7,6 +7,14 @@
         "stage": "dev",
         "foo": "bar"
       }
+    },
+    {
+      "uri": "http://localhost:8090/another/health",
+      "labels": {
+        "name": "another",
+        "stage": "qa",
+        "bar": "baz"
+      }
     }
   ]
 }

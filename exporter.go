@@ -86,7 +86,15 @@ func (e *Exporter) Collect(ch chan <- prometheus.Metric) {
 }
 
 func (e *Exporter) performCheck(service Service) (*HealthCheckResult, error) {
-	labels := prometheus.Labels{}
+	defaultLabels := func(labelNames []string) (prometheus.Labels) {
+		labels := prometheus.Labels{}
+		for _, labelName := range labelNames {
+			labels[labelName] = ""
+		}
+		return labels
+	}
+
+	labels := defaultLabels(e.config.collectUniqueLabelNames())
 	for label, value := range service.Labels {
 		labels[label] = value
 	}
