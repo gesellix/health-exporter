@@ -32,7 +32,7 @@ type Exporter struct {
 }
 
 func NewExporter(servicesConfig *Config) *Exporter {
-	timeout := time.Duration(0.5 * time.Second)
+	timeout := time.Duration(500 * time.Millisecond)
 	httpClient := &http.Client{
 		Timeout: timeout,
 	}
