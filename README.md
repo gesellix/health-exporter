@@ -13,9 +13,13 @@ declared for one service but not for another service, will have empty values.
 
 ## Usage
 
+```
+$ docker run -d -p 9990:9990 -v `pwd`/config.json:/config.json gesellix/health-exporter -config.file=/config.json
+```
+
 By default the `config.json` is read from the current directory, but you can use another config
 with the `-config.file=...` command line argument. The *health-exporter* listens on port `9990` by default
-and exposes the metric under the `/metrics` path. Use `./health-exporter --help` to see all options.
+and exposes all metrics under the `/metrics` path. Use `./health-exporter --help` to see all options.
 
 ## Example
 
