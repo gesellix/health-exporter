@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
@@ -32,9 +31,9 @@ type Exporter struct {
 }
 
 func NewExporter(servicesConfig *Config) *Exporter {
-	timeout := time.Duration(500 * time.Millisecond)
+	glog.Infof("Request timeout is %s", servicesConfig.RequestTimeout().String())
 	httpClient := &http.Client{
-		Timeout: timeout,
+		Timeout: servicesConfig.RequestTimeout(),
 	}
 
 	return &Exporter{

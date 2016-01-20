@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"encoding/json"
 	"io/ioutil"
 )
@@ -11,7 +13,8 @@ type Service struct {
 }
 
 type Config struct {
-	Services []Service `json:"services"`
+	RequestTimeoutMillis int64     `json:"requestTimeoutMillis"`
+	Services             []Service `json:"services"`
 }
 
 func readConfig(file string) (*Config, error) {
@@ -39,4 +42,12 @@ func (c *Config) collectUniqueLabelNames() []string {
 		i += 1
 	}
 	return labels
+}
+
+func (c *Config) RequestTimeout() time.Duration {
+	timeoutInMillis := c.RequestTimeoutMillis
+	if timeoutInMillis <= 0 {
+		timeoutInMillis = 500
+	}
+	return time.Duration(timeoutInMillis) * time.Millisecond
 }
