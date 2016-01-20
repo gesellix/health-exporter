@@ -30,3 +30,6 @@ health-exporter
 
 *.sublime-project
 *.sublime-workspace
+
+*.local.sh
+Dockerfile.local
