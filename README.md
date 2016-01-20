@@ -23,7 +23,8 @@ and exposes all metrics under the `/metrics` path. Use `./health-exporter --help
 
 ## Example
 
-The following example config would result in the metrics shown below:
+The following example config would result in the metrics shown below.
+The `requestTimeoutMillis` property defaults to _500_ when missing:
 
 Config:
 
