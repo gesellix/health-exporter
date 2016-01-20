@@ -29,6 +29,7 @@ Config:
 
 ```
 {
+  "requestTimeoutMillis": 500,
   "services": [
     {
       "uri": "http://localhost:8080/health",
