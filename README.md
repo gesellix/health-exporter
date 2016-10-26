@@ -2,6 +2,10 @@
 
 Health Exporter for [Prometheus](http://prometheus.io/)
 
+## Deprecation
+
+**The health exporter won't be actively maintained anymore**, since the official [blackbox exporter](https://github.com/prometheus/blackbox_exporter) solves the same use case - and even more.
+
 ## About
 
 Checks a list of service URLs for their HTTP response status code. Each service status will be exposed as Prometheus
